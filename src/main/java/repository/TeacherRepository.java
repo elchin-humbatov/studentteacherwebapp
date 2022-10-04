@@ -1,12 +1,16 @@
 package repository;
 
+
 import entity.Teacher;
 import entity.University;
+
+import java.math.BigDecimal;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -23,6 +27,63 @@ public class TeacherRepository extends Repository<Teacher> {
                 list.add(new Teacher(
                         rs.getInt("id"),
                         rs.getString("name"),
+                        rs.getBigDecimal("salary"),
+                        rs.getString("surname"),
+                        new University(rs.getInt("university_id"), null)));
+            }
+
+            return list;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+    
+    public List<Teacher> getList(String name, String surname, BigDecimal salary) {
+        try (Connection connection = connect()) {
+            String sql = "select * from teacher where ";
+            
+            int index = 0;
+            if(name != null && name.trim().length()>0){
+            sql +="name like ? and ";
+            index++;
+            }
+             if(surname != null && surname.trim().length()>0){
+            sql +="surname like ? and ";
+            index++;
+
+            }
+            if(salary != null){
+            sql +="salary=? and ";
+            index++;
+            }
+            
+            sql = sql.substring(0, sql.length()-5);
+            
+            System.out.println(sql);
+            PreparedStatement statement = connection.prepareStatement(sql);
+            
+            if(salary != null){
+                statement.setBigDecimal(index, salary);
+                index--;
+            }
+            if(surname != null && surname.trim().length() >0){
+                statement.setString(index, "%" + surname + "%");
+                index--;
+            }
+            if(name != null && name.trim().length()>0){
+                statement.setString(index, "%" + name + "%");
+                index--;
+            }
+            
+            ResultSet rs = statement.executeQuery();
+           
+            List<Teacher> list = new ArrayList<>();
+            while (rs.next()) {
+                list.add(new Teacher(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getBigDecimal("salary"),
                         rs.getString("surname"),
                         new University(rs.getInt("university_id"), null)));
             }
@@ -44,6 +105,7 @@ public class TeacherRepository extends Repository<Teacher> {
                 return new Teacher(
                         rs.getInt("id"),
                         rs.getString("name"),
+                        rs.getBigDecimal("salary"),
                         rs.getString("surname"),
                         new University(rs.getInt("university_id"), null));
             } else {
@@ -64,8 +126,12 @@ public class TeacherRepository extends Repository<Teacher> {
             statement.setString(1, teacher.getName());
             statement.setString(2, teacher.getSurname());
             statement.setBigDecimal(3, teacher.getSalary());
-            statement.setInt(4, teacher.getUniversity().getId());
-
+            if(teacher.getUniversity() != null){
+                 statement.setInt(4, teacher.getUniversity().getId());
+            }else{
+                 statement.setNull(4,Types.INTEGER);
+            }
+            
             statement.execute();
 
             ResultSet rs = statement.getGeneratedKeys();

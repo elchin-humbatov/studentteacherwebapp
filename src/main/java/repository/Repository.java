@@ -8,6 +8,7 @@ import java.util.List;
 
 public abstract class Repository<T> {
     protected Connection connect() throws Exception {
+        Class.forName("com.mysql.cj.jdbc.Driver");
         return DriverManager.getConnection("jdbc:mysql://localhost:3306/freedom", "root", "Berkelium*97");
     }
     public abstract List<T> getList();
